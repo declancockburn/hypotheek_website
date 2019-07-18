@@ -1,0 +1,35 @@
+Todo learn:
+    Bootstrap stuff e.g. form.confirm_password(class="form-control form-control-lg")
+
+
+
+Todo make:
+    Make start-date field
+    Make year/month column
+    Make % into %
+    Columns:  Month/yr, Principal, Payment,	(Redemption), (Interest)
+    mortgage calculator
+        Make interest-calculator next to compare!!
+    make tool into actual hostable webpage, how?
+
+
+
+
+
+<!--    <form method="post" action="{{ url_for('calc') }}">-->
+<!--        {{ form.hidden_tag() }}-->
+
+<!--        {{ form.number.label }} {{ form.number() }}-->
+<!--        {% if form.number.errors %}-->
+<!--            Error {{ ', '.join(form.number.errors) }}-->
+<!--        {% endif %}-->
+<!--        {{ form.divide_by.label }} {{ form.divide_by() }}-->
+<!--        {% if form.divide_by.errors %}-->
+<!--            Error {{ ', '.join(form.number.errors) }}-->
+
+<!--        {% endif %}-->
+<!--        <input type="submit" value="Calculate"/>-->
+<!--    </form>-->
+<!--    {% if result %}-->
+<!--        Result is: {{ result }}-->
+<!--    {% endif %}-->

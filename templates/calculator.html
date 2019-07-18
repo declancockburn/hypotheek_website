@@ -1,0 +1,106 @@
+{% extends "layout.html" %}
+{% block content %}
+
+
+
+
+<div class="content-section">
+    <form method="POST" action="{{ url_for('calc') }}">
+        {{ m_form.hidden_tag() }}
+        <fieldset class="form-group">
+            <legend class="border-bottom mb-4">Join Today!</legend>
+                <div class="form-group">
+                    {{ m_form.principal.label(class="form-control-label") }}
+                    {% if m_form.principal.errors %}
+                        {{ m_form.principal(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in m_form.principal.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ m_form.principal(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+            <div class="form-group">
+                {{ m_form.int_rate.label(class="form-control-label") }}
+                    {% if m_form.int_rate.errors %}
+                        {{ m_form.int_rate(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in m_form.int_rate.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ m_form.int_rate(class="form-control form-control-lg") }}
+                    {% endif %}
+            </div>
+            <div class="form-group">
+                {{ m_form.years.label(class="form-control-label") }}
+                    {% if m_form.years.errors %}
+                        {{ m_form.years(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in m_form.years.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ m_form.years(class="form-control form-control-lg") }}
+                    {% endif %}
+            </div>
+            <div class="form-group">
+                {{ m_form.start_date.label(class="form-control-label") }}
+                    {% if m_form.start_date.errors %}
+                        {{ m_form.start_date(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in m_form.start_date.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ m_form.years(class="form-control form-control-lg") }}
+                    {% endif %}
+            </div>
+
+
+        </fieldset>
+        <div class="form-group">
+            {{ m_form.submit(class="btn btn-outline-info") }}
+        </div>
+    </form>
+    {% if output %}
+        Result is:
+        {{ output|safe }}
+    {% endif %}
+</div>
+
+    <h1>This is the ASML about page.</h1>
+{% endblock content %}
+
+
+
+"""
+principal = 200000
+int_rate = 0.022
+years = 30
+
+
+payment = principal/(years*12)
+tot = 0
+for m in range(years*12):
+    interest = (principal/12)*int_rate
+    print("M: {}, Pr: {}, Rdmptn: {}, Int: {}, tot: {}".format(m+1, principal, payment, interest, interest + payment))
+    principal = principal-payment
+    tot += payment+interest
+
+print(tot)
+"""
+
+
+
+
+<!--        <label for="number">Number:</label>-->
+<!--        <input type="text" name="number" id="number">-->
+
+<!--        <label for="divide_by">Divide by:</label>-->
+<!--        <input type="text" name="divide_by" id="divide_by">-->
