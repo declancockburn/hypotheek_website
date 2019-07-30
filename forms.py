@@ -6,6 +6,7 @@ from wtforms import StringField, PasswordField, SubmitField, BooleanField, Float
 from wtforms.fields import DateField
 from wtforms.validators import DataRequired, Length, Email, EqualTo
 import pandas as pd
+import numpy as np
 
 
 class RegistrationForm(FlaskForm):
@@ -37,6 +38,10 @@ class CalcMortgage(Form):
     start_date = DateField("Start Date", id='datepick')
     #todo make a date field
 
+    # def __init__(self):
+    #     self.df = None
+    #     self.total = None
+
     def calc(self):
         payment = round(self.principal.data / (self.years.data * 12), 2)
         total = 0
@@ -46,8 +51,9 @@ class CalcMortgage(Form):
             df_data.append([m + 1, self.principal.data, payment, interest, interest + payment])
             self.principal.data = round(self.principal.data - payment, 2)
             total += round(payment + interest, 2)
-
-        return pd.DataFrame(data=df_data, columns=["Month", "Princ", "Redempt. pay", "Int pay", "Tot pay"]).to_html()
+        df = pd.DataFrame(data=df_data, columns=["Month", "Princ", "Redempt. pay", "Int pay", "Tot pay"])
+        final = np.sum(df["Tot pay"])
+        return f"Total = {final}<br><br>{df.to_html()}"
 
 #
 # class Test:
