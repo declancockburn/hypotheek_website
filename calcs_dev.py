@@ -3,12 +3,20 @@ import pandas as pd
 import numpy as np
 
 
-class CalcMortgage():
+class CalcMortgage:
 
-    principal = 260000
-    int_rate = 2.1
+    house_init_value = 266000
+    house_value_interest_rate = 1
+    down_payment = 117000
+    principal_mortg = 160000
+    int_rate = 2.82
+
+    init_rent_pm = 1600 * 11/12
+    rent_interest = 1
+
+    ETF_int_rate = 7
     years = 30
-    # principal = FloatField("Mortgage Amount")
+    # principal_mortg = FloatField("Mortgage Amount")
     # int_rate = FloatField("Interest Rate %")
     # years = IntegerField("Years")
     # submit = SubmitField('Calculate')
@@ -21,13 +29,93 @@ class CalcMortgage():
         self.df_ann = None
         self.total_lin = None
         self.total_ann = None
+        self.princ_compnd_factor = None
+        self.compnd_monthly = None
         self.int_rate /= 100
         self.calc_linear()
         self.calc_ann()
-        print(self.df_ann.head(10))
+        self.calc_rental()
+        self.calc_savings()
+
+        # print(self.df_ann.head(10))
+
+    def bring_dfs_together(self, df):
+        A = self.princ_compnd_factor
+        X = self.compnd_monthly
+        dp = [self.down_payment]*len(df)
+        df['NM_if_downpayment_invstd'] = pd.Series(A) * pd.Series(dp)
+        df['NM_if_mrtg_payments_invstd'] = df['Monthly_Pay'] * X
+        df['NM_total_savings'] = df['NM_if_downpayment_invstd'] + df['NM_if_mrtg_payments_invstd']
+
+        df['M_rent_minus_mrtg_delta'] = df['Rent'] - df['Monthly_Pay']
+        temp_rent_delta_series = [v if v > 0 else 0 for v in df['M_rent_minus_mrtg_delta'].values]
+        temp_rent_delta_series = pd.Series(temp_rent_delta_series)
+        df['M_rent_delta_invstd'] = temp_rent_delta_series * pd.Series(X)
+        df['M_house_value'] = self.calc_house_val()
+        df['M_house_value_owned'] = df['M_house_value'] - df['Mrtg_Principal']
+        df['M_total_net_worth'] = df['M_rent_delta_invstd'] + df['M_house_value_owned']
+
+        return df.round(2)
+
+    def calc_rental(self):
+        y = self.years
+        rent = self.init_rent_pm
+        i = self.rent_interest/100 + 1
+        t = [x for x in np.arange(1 / 12, y + 1 / 12, 1 / 12)]
+
+        counter = 1
+        rent_lst = []
+        for n in t:
+            rent_lst.append(rent)
+            if counter % 12 == 0:
+                rent *= i
+            counter += 1
+
+        self.df_ann['Rent'] = rent_lst
+        self.df_lin['Rent'] = rent_lst
+
+    def calc_house_val(self):
+        y = self.years
+        i = self.house_value_interest_rate / 100
+        val = self.house_init_value
+        t = [x for x in np.arange(1 / 12, y + 1 / 12, 1 / 12)]
+
+        house_val_lst = []
+        for m in t:
+            house_val_lst.append(val)
+            val = val*(1 + i/12)
+        return house_val_lst
+
+    def calc_savings(self):
+        p = self.down_payment
+        y = self.years
+        r = self.ETF_int_rate / 100
+        n = 12
+        A = []
+        X = []
+        for t in np.arange(1/12,y+1/12,1/12):
+            A.append((1 + r/n)**(n*t))
+            X.append((((1 + r/n)**(n*t) - 1) / (r/n)) * (1+r/n))
+
+        self.princ_compnd_factor = A
+        self.compnd_monthly = X
+
+        self.df_ann = self.bring_dfs_together(self.df_ann)
+        self.df_lin = self.bring_dfs_together(self.df_lin)
+
+        """
+        A = P (1 + r/n)**(nt)
+        A = the future value of the investment/loan, including interest
+        P = the principal investment amount (the initial deposit or loan amount)
+        r = the annual interest rate (decimal)
+        n = the number of times that interest is compounded per unit t
+        t = the time the money is invested or borrowed for
+        
+        per month cont: A + PMT × {[(1 + r/n)**(nt) - 1] / (r/n)} × (1+r/n)
+        """
 
     def calc_linear(self):
-        p = self.principal
+        p = self.principal_mortg
         n = self.years
         payment = round(p / (n * 12), 2)
         total = 0
@@ -37,11 +125,12 @@ class CalcMortgage():
             df_data.append([m + 1, p, payment, interest, interest + payment])
             p = round(p - payment, 2)
             total += round(payment + interest, 2)
-        self.df_lin = pd.DataFrame(data=df_data, columns=["Month", "Principal", "Deduction", "Interest", "Monthly_Pay"])
-        new_order = ["Month", "Principal", "Monthly_Pay", "Deduction", "Interest"]
+        self.df_lin = pd.DataFrame(data=df_data, columns=["Month#", "Mrtg_Principal", "Mrtg_Deduction_payment", "Mrtg_Interest_payment", "Monthly_Pay"])
+        new_order = ["Month#", "Mrtg_Principal", "Mrtg_Deduction_payment", "Mrtg_Interest_payment", "Monthly_Pay"]
         self.df_lin = self.df_lin[new_order]
         self.total_lin = np.sum(self.df_lin["Monthly_Pay"])
         # return f"Total = {final}<br><br>{df.to_html()}"
+        #todo: add bruto vs netto
 
     def calc_ann(self):
         """
@@ -52,9 +141,9 @@ class CalcMortgage():
         n = number of repayments
         i = interest (per repayment)
         """
-        rep_cost = self.principal
+        rep_cost = self.principal_mortg
 
-        p = self.principal
+        p = self.principal_mortg
         i = self.int_rate / 12
         n = self.years * 12
 
@@ -67,14 +156,14 @@ class CalcMortgage():
             pv = rep_cost * (1 - (1 + i) ** (-m)) / i
             pv_after = rep_cost * (1 - (1 + i) ** (-(m - 1))) / i
             data.append([pv, rep_cost, pv_after])
-            print(pv)
+            # print(pv)
 
-        df = pd.DataFrame(data, columns=["Principal", "Monthly_Pay", "Prn_After"])
-        df["Deduction"] = df["Principal"] - df["Prn_After"]
-        df["Interest"] = df["Monthly_Pay"] - df["Deduction"]
+        df = pd.DataFrame(data, columns=["Mrtg_Principal", "Monthly_Pay", "Prn_After"])
+        df["Mrtg_Deduction_payment"] = df["Mrtg_Principal"] - df["Prn_After"]
+        df["Mrtg_Interest_payment"] = df["Monthly_Pay"] - df["Mrtg_Deduction_payment"]
         df.drop("Prn_After", axis=1, inplace=True)
-        df["Month"] = df.index.values + 1
-        new_order = ["Month", "Principal", "Monthly_Pay", "Deduction", "Interest"]
+        df["Month#"] = df.index.values + 1
+        new_order = ["Month#", "Mrtg_Principal", "Monthly_Pay", "Mrtg_Deduction_payment", "Mrtg_Interest_payment"]
         self.df_ann = df[new_order]
         self.df_ann = self.df_ann.round(2)
         self.total_ann = np.sum(self.df_ann["Monthly_Pay"])
@@ -86,7 +175,9 @@ ann = c.df_ann
 
 tot_lin = c.total_lin
 tot_ann = c.total_ann
-# ##
+
+
+# ## ann.to_excel("160k_annuity_2.82.xlsx")
 # import pandas as pd
 #
 #
@@ -107,9 +198,9 @@ tot_ann = c.total_ann
 #     data.append([pv, rep_cost, pv_after])
 #     print(pv)
 #
-# df = pd.DataFrame(data, columns=["Principal", "Monthly_Pay", "Prn_After"])
-# df["Deduction"] = df["Principal"] - df["Prn_After"]
-# df["Interest"] = df["Monthly_Pay"] - df["Deduction"]
-# df["month"] = df.index.values + 1
+# df = pd.DataFrame(data, columns=["Mrtg_Principal", "Monthly_Pay", "Prn_After"])
+# df["Mrtg_Deduction_payment"] = df["Mrtg_Principal"] - df["Prn_After"]
+# df["Mrtg_Interest_payment"] = df["Monthly_Pay"] - df["Mrtg_Deduction_payment"]
+# df["Month#"] = df.index.values + 1
 #
 #

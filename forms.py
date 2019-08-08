@@ -57,17 +57,17 @@ class CalcMortgage(Form):
 
 #
 # class Test:
-#     principal = 150000
+#     principal_mortg = 150000
 #     years = 20
 #     int_rate = 0.02
 #     def calc(self):
-#         payment = self.principal / (self.years * 12)
+#         payment = self.principal_mortg / (self.years * 12)
 #         total = 0
 #         df_data = []
 #         for m in range(self.years * 12):
-#             interest = (self.principal / 12) * self.int_rate
-#             df_data.append([m + 1, self.principal, payment, interest, interest + payment])
-#             self.principal = self.principal - payment
+#             interest = (self.principal_mortg / 12) * self.int_rate
+#             df_data.append([m + 1, self.principal_mortg, payment, interest, interest + payment])
+#             self.principal_mortg = self.principal_mortg - payment
 #             total += payment + interest
 #         return pd.DataFrame(data=df_data, columns=["Month", "Princ", "Redempt. pay", "Int pay", "Tot pay"])
 #

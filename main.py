@@ -115,17 +115,17 @@ if __name__ == '__main__':
     app.run(debug=True)
 
 """
-principal = 200000
+principal_mortg = 200000
 int_rate = 0.022
 years = 30
 
 
-payment = principal/(years*12)
+payment = principal_mortg/(years*12)
 tot = 0
 for m in range(years*12):
-    interest = (principal/12)*int_rate
-    print("M: {}, Pr: {}, Rdmptn: {}, Int: {}, tot: {}".format(m+1, principal, payment, interest, interest + payment))
-    principal = principal-payment
+    interest = (principal_mortg/12)*int_rate
+    print("M: {}, Pr: {}, Rdmptn: {}, Int: {}, tot: {}".format(m+1, principal_mortg, payment, interest, interest + payment))
+    principal_mortg = principal_mortg-payment
     tot += payment+interest
 
 print(tot)
