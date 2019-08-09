@@ -1,0 +1,13 @@
+house_init_value = 266000
+house_value_interest_rate = -1
+down_payment = 117000
+
+principal_mortg = 160000
+int_rate = 2.82
+
+init_rent_pm = 1550
+rent_interest = 1
+
+savings_per_month = 500
+ETF_int_rate = 5
+years = 30

@@ -13,20 +13,21 @@ import numpy as np
 
 # Questions/options: Can you deduct mo
 
-#todo: make output where no-mortgage catches up with mortgage
+# TODO: fix savings
 
 
 class CalcMortgage:
 
     house_init_value = 266000
-    house_value_interest_rate = -1
+    house_value_interest_rate = 1
     down_payment = 117000
     principal_mortg = 160000
     int_rate = 2.82
 
-    init_rent_pm = 1600 * 11/12
-    rent_interest = 1
+    init_rent_pm = 2000 * 11/12
+    rent_interest = 2
 
+    savings_per_month = 0
     ETF_int_rate = 5
     years = 30
     # principal_mortg = FloatField("Mortgage Amount")
@@ -58,16 +59,17 @@ class CalcMortgage:
         X = self.compnd_monthly
         dp = [self.down_payment]*len(df)
         df['NM_if_downpayment_invstd'] = pd.Series(A) * pd.Series(dp)
-        df['NM_if_mrtg_payments_invstd'] = df['Monthly_Pay'] * X
-        df['NM_total_savings'] = df['NM_if_downpayment_invstd'] + df['NM_if_mrtg_payments_invstd']
+        df['NM_if_savings_invested'] = pd.Series([self.savings_per_month]*len(df)) * X
+        df['NM_total_savings'] = df['NM_if_downpayment_invstd'] + df['NM_if_savings_invested']
 
-        df['M_rent_minus_mrtg_delta'] = df['Rent'] - df['Monthly_Pay']
-        temp_rent_delta_series = [v if v > 0 else 0 for v in df['M_rent_minus_mrtg_delta'].values]
-        temp_rent_delta_series = pd.Series(temp_rent_delta_series)
-        df['M_rent_delta_invstd'] = temp_rent_delta_series * pd.Series(X)
+        df['M_rent_minus_mrtg_plus_savings'] = df['Rent'] - df['Monthly_Pay'] + [self.savings_per_month]*len(df)
+        # temp_rent_delta_series = [v if v > 0 else 0 for v in df['M_rent_minus_mrtg_plus_savings'].values]
+        # temp_rent_delta_series = pd.Series(temp_rent_delta_series)
+        # df['M_rent_delta_savings_invstd'] = temp_rent_delta_series * pd.Series(X)
+        df['M_rent_delta_savings_invstd'] = df['M_rent_minus_mrtg_plus_savings'] * pd.Series(X)
         df['M_house_value'] = self.calc_house_val()
         df['M_house_value_owned'] = df['M_house_value'] - df['Mrtg_Principal']
-        df['M_total_net_worth'] = df['M_rent_delta_invstd'] + df['M_house_value_owned']
+        df['M_total_net_worth'] = df['M_rent_delta_savings_invstd'] + df['M_house_value_owned']
 
         return df.round(2)
 
@@ -190,8 +192,8 @@ class CalcMortgage:
         ann_be = round(x[x > 0].index[0]/12, 1)
         lin_be = round(x[x > 0].index[0]/12, 1)
 
-        ser = pd.DataFrame(data = [
-            ["", None],
+        df = pd.DataFrame(data = [
+            ["<<INPUTS>>", None],
             ["House Initial Value", self.house_init_value],
             ["House Appreciation Rate %", self.house_value_interest_rate],
             ["Down Payment", self.down_payment],
@@ -202,20 +204,39 @@ class CalcMortgage:
             ["Rent increase % per year", self.rent_interest],
             ["", None],
             ["Expected ETF return rate %", self.ETF_int_rate],
+            ["Regular Monthly Savings (in any case)", self.savings_per_month],
             ["Number of years", self.years],
             ["", None],
-            ["INVESTING ONLY: This assumes no other networth other than \"Down payment\", and investing what would have gone to mortgage CORRECT??", None],
-            [f"Networth after {self.years} years, saving \"annuity\" payments", ann['NM_total_savings'].values[-1]],
-            [f"Networth after {self.years} years, saving \"linear\" payments", lin['NM_total_savings'].values[-1]],
+            ["<<RESULTS>>", None],
+            ["INVESTING ONLY: This assumes no other networth other than \"Down payment\" + regular savings", None],
+            [f"Net worth after {self.years} years, saving \"annuity\" payments", ann['NM_total_savings'].values[-1]],
+            # [f"Networth after {self.years} years, saving \"linear\" payments", lin['NM_total_savings'].values[-1]],
             ["", None],
             ["BTR ONLY: This assumes any rent (minus mortgage) profits get invested in ETFs, and includes property value", None],
-            [f"Networth after {self.years} years, with \"annuity\" mortgage", ann['M_total_net_worth'].values[-1]],
-            [f"Networth after {self.years} years, with \"linear\" mortgage", lin['M_total_net_worth'].values[-1]],
+            [f"Net worth after {self.years} years, with \"annuity\" mortgage", ann['M_total_net_worth'].values[-1]],
+            [f"Net worth after {self.years} years, with \"linear\" mortgage", lin['M_total_net_worth'].values[-1]],
             ["Break even point Annuity", f"{ann_be} years"],
             ["Break even point Linear", f"{lin_be} years"]
         ])
 
-        ser.to_excel("test.xlsx")
+        # with pd.ExcelWriter('output.xlsx') as writer:
+        writer = pd.ExcelWriter('output.xlsx', engine='xlsxwriter')
+        df.to_excel(writer, "Summary")
+        self.df_ann.to_excel(writer, "Annuity")
+        self.df_lin.to_excel(writer, "Linear")
+        workbook = writer.book
+        worksheet = writer.sheets["Summary"]
+        # set the column width as per your requirement
+        worksheet.set_column('B:B', 50)
+        worksheet = writer.sheets["Annuity"]
+        worksheet.set_column('C:O', 15)
+        worksheet.set_column('D:E', 20)
+        worksheet.set_column('H:O', 25)
+        worksheet = writer.sheets["Linear"]
+        worksheet.set_column('C:O', 15)
+        worksheet.set_column('D:E', 20)
+        worksheet.set_column('H:O', 25)
+        writer.save()
 
 
 c = CalcMortgage()
@@ -224,6 +245,8 @@ ann = c.df_ann
 
 tot_lin = c.total_lin
 tot_ann = c.total_ann
+
+# with open('inputs.txt'):
 
 
 
