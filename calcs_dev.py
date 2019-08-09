@@ -3,6 +3,17 @@ import pandas as pd
 import numpy as np
 
 
+# TODO: Make a "point at which one over takes other in horse race"
+# TODO: Make a start month.
+# TODO: Make a mortgage interest deduction based on time
+# TODO: Make a summary sheet, and explanation
+
+#later:
+# TODO: make a box 3 subtraction, networth.
+# TODO: make a box 1 subtraction, house value.
+
+# Questions/options: Can you deduct mo
+
 class CalcMortgage:
 
     house_init_value = 266000
