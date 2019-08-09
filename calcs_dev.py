@@ -2,7 +2,6 @@
 import pandas as pd
 import numpy as np
 
-
 # TODO: Make a "point at which one over takes other in horse race"
 # TODO: Make a start month.
 # TODO: Make a mortgage interest deduction based on time
@@ -14,10 +13,13 @@ import numpy as np
 
 # Questions/options: Can you deduct mo
 
+#todo: make output where no-mortgage catches up with mortgage
+
+
 class CalcMortgage:
 
     house_init_value = 266000
-    house_value_interest_rate = 1
+    house_value_interest_rate = -1
     down_payment = 117000
     principal_mortg = 160000
     int_rate = 2.82
@@ -25,7 +27,7 @@ class CalcMortgage:
     init_rent_pm = 1600 * 11/12
     rent_interest = 1
 
-    ETF_int_rate = 7
+    ETF_int_rate = 5
     years = 30
     # principal_mortg = FloatField("Mortgage Amount")
     # int_rate = FloatField("Interest Rate %")
@@ -47,6 +49,7 @@ class CalcMortgage:
         self.calc_ann()
         self.calc_rental()
         self.calc_savings()
+        self.gather_results()
 
         # print(self.df_ann.head(10))
 
@@ -179,6 +182,41 @@ class CalcMortgage:
         self.df_ann = self.df_ann.round(2)
         self.total_ann = np.sum(self.df_ann["Monthly_Pay"])
 
+    def gather_results(self):
+        ann = self.df_ann
+        lin = self.df_lin
+        x = (ann["M_total_net_worth"] - ann["NM_total_savings"])
+        y = (lin["M_total_net_worth"] - lin["NM_total_savings"])
+        ann_be = round(x[x > 0].index[0]/12, 1)
+        lin_be = round(x[x > 0].index[0]/12, 1)
+
+        ser = pd.DataFrame(data = [
+            ["", None],
+            ["House Initial Value", self.house_init_value],
+            ["House Appreciation Rate %", self.house_value_interest_rate],
+            ["Down Payment", self.down_payment],
+            ["Mortgage Amount", self.principal_mortg],
+            ["Mortgage Interest Rate %", self.int_rate*100],
+            ["", None],
+            ["Average initial rent pm", self.init_rent_pm],
+            ["Rent increase % per year", self.rent_interest],
+            ["", None],
+            ["Expected ETF return rate %", self.ETF_int_rate],
+            ["Number of years", self.years],
+            ["", None],
+            ["INVESTING ONLY: This assumes no other networth other than \"Down payment\", and investing what would have gone to mortgage CORRECT??", None],
+            [f"Networth after {self.years} years, saving \"annuity\" payments", ann['NM_total_savings'].values[-1]],
+            [f"Networth after {self.years} years, saving \"linear\" payments", lin['NM_total_savings'].values[-1]],
+            ["", None],
+            ["BTR ONLY: This assumes any rent (minus mortgage) profits get invested in ETFs, and includes property value", None],
+            [f"Networth after {self.years} years, with \"annuity\" mortgage", ann['M_total_net_worth'].values[-1]],
+            [f"Networth after {self.years} years, with \"linear\" mortgage", lin['M_total_net_worth'].values[-1]],
+            ["Break even point Annuity", f"{ann_be} years"],
+            ["Break even point Linear", f"{lin_be} years"]
+        ])
+
+        ser.to_excel("test.xlsx")
+
 
 c = CalcMortgage()
 lin = c.df_lin
@@ -186,6 +224,11 @@ ann = c.df_ann
 
 tot_lin = c.total_lin
 tot_ann = c.total_ann
+
+
+
+
+
 
 
 # ## ann.to_excel("160k_annuity_2.82.xlsx")
