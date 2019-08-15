@@ -20,7 +20,7 @@ import numpy as np
 class CalcMortgage:
     house_init_value = 310000
     house_value_appreciation_rate = 1
-    down_payment = 34000
+    own_payment = 34000
     principal_mortg = 290000
     mrtg_int_rate = 1.6
 
@@ -47,7 +47,6 @@ class CalcMortgage:
         self.calc_linear()
         self.calc_ann()
         self.etf_invst_factors()
-
 
     def calc_house_val(self):
         y = self.years
@@ -142,9 +141,44 @@ class CalcMortgage:
 
 class FirstHouse(CalcMortgage):
     """This compares buying first house vs renting over many years"""
+    house_init_value = 310000
+    # This number includes
+    house_value_appreciation_rate = 1
+    # Here all own payment: downpayment, fees etc.
+    own_payment = 34000
+    principal_mortg = 290000
+    mrtg_int_rate = 1.54
+
+    expected_rent_pm = 1000
+    rent_appreciation = 2
+
+    savings_per_month = 0
+    ETF_int_rate = 7
+    years = 30
+
     def __init__(self):
         super().__init__()
 
+    def bring_dfs_together(self, df):
+        A = self.princ_compnd_factor
+        X = self.compnd_monthly
+        dp = [self.own_payment] * len(df)
+        df['NM_if_downpayment_invstd'] = pd.Series(A) * pd.Series(dp)
+        # df['NM_if_savings_invested'] = pd.Series([self.savings_per_month]*len(df)) * X
+        # df['NM_total_savings'] = df['NM_if_downpayment_invstd'] + df['NM_if_savings_invested']
+
+        # df['M_rent_minus_mrtg_plus_savings'] = df['Rent'] - df['Monthly_Pay'] + [self.savings_per_month]*len(df)
+        # temp_rent_delta_series = [v if v > 0 else 0 for v in df['M_rent_minus_mrtg_plus_savings'].values]
+        # temp_rent_delta_series = pd.Series(temp_rent_delta_series)
+        # df['M_rent_delta_savings_invstd'] = temp_rent_delta_series * pd.Series(X)
+        # df['M_rent_delta_savings_invstd'] = df['M_rent_minus_mrtg_plus_savings'] * pd.Series(X)
+        df['rent_monthly_pay'] = [self.expected_rent_pm]*len(df)
+        df['rent_minus_mrtg'] = df['rent_monthly_pay'] - df['Monthly_Pay']
+        df['M_monthly_delta'] = df['rent_minus_mrtg']*X#[x*X if x > 0 else
+        df['M_house_value'] = self.calc_house_val()
+        df['M_house_value_owned'] = df['M_house_value'] - df['Mrtg_Principal']
+        df['M_total_net_worth'] = df['M_rent_delta_savings_invstd'] + df['M_house_value_owned']
+        return df.round(2)
 
 class SecondHouse(CalcMortgage):
     """This compares buying a 2nd house and renting it vs investing money"""
