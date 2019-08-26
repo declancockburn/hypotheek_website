@@ -68,28 +68,17 @@ class CalcMortgage:
             counter += 1
         return rent_lst
 
-    @staticmethod
 
+    @staticmethod #TODO add this into end calculation/sheet for first mortgage only
+    def calc_benefit(interest, value, year):
+        """only works for high income"""
+        def cal_woz(v):
+            return v * 0.65 / 100
 
-    @staticmethod
-    def calc_interest_deduction(value, year, interest_payment):
-        def calc_property_tax(v, y):
-            tax = v * 0.65 / 100
-            reduction = 1 - (y - 2019) * 0.0333
-            return tax * reduction / 100
-
-        """49% of what?"""
-        deductible = interest_payment - calc_property_tax(value, year) / 12
-        print(deductible)
-        rate = 49 - (year - 2019) * 3
-        print(rate)
-        if rate > 0:
-            return (deductible * rate / 100) * 0.52
-        else:
-            return 0
-        # TODO needs work
-
-
+        def calc_rate(y):
+            r = 49 - (y - 2019) * 3
+            return r if r > 0 else 0
+        return (interest - cal_woz(value) / 12) * calc_rate(year)
 
 
     def calc_house_val(self):
@@ -136,6 +125,7 @@ class CalcMortgage:
         new_order = ["Month#", "Mrtg_Principal", 'Monthly_Mrtg_Pay', "Mrtg_Deduction_payment", "Mrtg_Interest_payment"]
         self.df_ann = df[new_order]
         self.df_ann = self.df_ann.round(2)
+        df["Tax_deduction"] = self.calc_benefit(df["Mrtg_Interest_payment"])
         self.total_ann = np.sum(self.df_ann['Monthly_Mrtg_Pay'])
 
     def calc_linear(self):
